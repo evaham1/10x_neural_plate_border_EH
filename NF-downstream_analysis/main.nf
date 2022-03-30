@@ -141,13 +141,13 @@ workflow {
     /* Run analysis on full filtered seurat object
     --------------------------------------------------------------------------------------*/
 
-    SEURAT_FILTERED_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
+    //SEURAT_FILTERED_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
 
     /*------------------------------------------------------------------------------------*/
     /* Run analysis on stage and run split
     --------------------------------------------------------------------------------------*/ 
     SEURAT_STAGE_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
-    SEURAT_RUN_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
+    //SEURAT_RUN_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
 
     /*------------------------------------------------------------------------------------*/
     /* Transfer cell type labels from stage to full dataset
@@ -163,59 +163,4 @@ workflow {
     // Transfer labels from stage subsets to full data
     TRANSFER_LABELS( ch_combined )
 
-    SEURAT_TRANSFER_FULL_PROCESS( TRANSFER_LABELS.out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]} )
-
-    /*------------------------------------------------------------------------------------*/
-    /* Run analysis on cluster subsets after transfer labels
-    --------------------------------------------------------------------------------------*/
-    SEURAT_TRANSFER_PPR_NC_PROCESS( TRANSFER_LABELS.out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]} )
-
-    ch_full_state_classification    = TRANSFER_LABELS.out.map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-    ch_full_cellrank                = SEURAT_TRANSFER_FULL_PROCESS.out.cellrank_run_out_metadata.map{it[1]}
-
-    ch_full_latent_time             = SEURAT_TRANSFER_FULL_PROCESS.out.gene_modules_out
-                                        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-                                        .combine(ch_full_state_classification)
-                                        .combine(ch_full_cellrank)
-                                        .map{[[sample_id:'full_gm_latent_time'], it]}
-    
-    GENE_MODULES_SUBSET_LATENT_TIME( ch_full_latent_time )
-
-    ch_seurat_npb_subset            = SEURAT_TRANSFER_PPR_NC_PROCESS.out.cluster_out.map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-
-    ch_npb_cellrank                = SEURAT_TRANSFER_PPR_NC_PROCESS.out.cellrank_run_out_metadata.map{it[1]}
-
-    ch_npb_latent_time              = SEURAT_TRANSFER_PPR_NC_PROCESS.out.gene_modules_out
-                                        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-                                        .combine(ch_seurat_npb_subset)
-                                        .combine(ch_npb_cellrank)
-                                        .combine(ch_binary_knowledge_matrix)
-                                        .map{[[sample_id:'npb_gm_latent_time'], it]}
-
-    GENE_MODULES_NPB_LATENT_TIME( ch_npb_latent_time )
-
-
-    // Run coexpression analysis on modules calculated from NPB subset
-
-    COEXPRESSION_NC_PPR_MODULES_NPB( ch_npb_latent_time )
-
-
-    // Set up channels for running co-expression analysis on npb subset with gms from ss8 //[[meta], ['HH5.rds', 'HH6.rds' … 'ss8.rds', 'npb_subset.rds', 'ss8_antler.rds']]
-    ch_stage_data                   = SEURAT_STAGE_PROCESS.out
-                                        .state_classification_out
-                                        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]} // it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]
-                                        .collect()
-    
-    ch_ss8_gms                      = SEURAT_STAGE_PROCESS.out
-                                        .gene_modules_out
-                                        .filter{ it[0].sample_id == 'ss8_splitstage_data' }
-                                        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-
-    ch_coexpression_analysis_npb    = ch_ss8_gms
-                                        .combine(ch_stage_data)
-                                        .combine(ch_seurat_npb_subset)
-                                        .map{[[sample_id:'coexpression_analysis_npb'], it]}
-
-
-    COEXPRESSION_ANALYSIS_NPB(ch_coexpression_analysis_npb)
 }

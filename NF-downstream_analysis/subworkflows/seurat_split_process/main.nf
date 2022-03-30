@@ -75,11 +75,11 @@ workflow SEURAT_SPLIT_PROCESS {
         .set { ch_state_classification }    //Channel: [[meta], [rds_file, csv]]
 
     STATE_CLASSIFICATION( ch_state_classification )
-    GENE_MODULES( STATE_CLASSIFICATION.out )
+    //GENE_MODULES( STATE_CLASSIFICATION.out )
 
     // // Run scVelo
-    SEURAT_H5AD( STATE_CLASSIFICATION.out )
-    SEURAT_SCVELO( SEURAT_H5AD.out, loom, annotations ) // Channel: [[meta], seurat.h5ad], Channel: merged.loom, Channel: seurat_annotations.csv
+    //SEURAT_H5AD( STATE_CLASSIFICATION.out )
+    //SEURAT_SCVELO( SEURAT_H5AD.out, loom, annotations ) // Channel: [[meta], seurat.h5ad], Channel: merged.loom, Channel: seurat_annotations.csv
 
     emit:
     cluster_out                     = CLUSTER.out                               //Channel: [[meta], [output]]

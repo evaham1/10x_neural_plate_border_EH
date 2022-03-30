@@ -58,12 +58,12 @@ workflow SEURAT_FILTERED_PROCESS {
         .set { ch_seurat_out }
 
     STATE_CLASSIFICATION( ch_seurat_out )
-    GENE_MODULES( STATE_CLASSIFICATION.out )
+    //GENE_MODULES( STATE_CLASSIFICATION.out )
 
     // // Run scVelo
-    SEURAT_H5AD( STATE_CLASSIFICATION.out )
-    SEURAT_SCVELO( SEURAT_H5AD.out, loom, annotations ) // Channel: [[meta], seurat.h5ad], Channel: merged.loom, Channel: seurat_annotations.csv
-    CELLRANK_RUN( SEURAT_SCVELO.out.scvelo_run_out_h5ad )
+    //SEURAT_H5AD( STATE_CLASSIFICATION.out )
+    //SEURAT_SCVELO( SEURAT_H5AD.out, loom, annotations ) // Channel: [[meta], seurat.h5ad], Channel: merged.loom, Channel: seurat_annotations.csv
+    //CELLRANK_RUN( SEURAT_SCVELO.out.scvelo_run_out_h5ad )
 
     emit:
     state_classification_out        = STATE_CLASSIFICATION.out                  //Channel: [[meta], [output]]

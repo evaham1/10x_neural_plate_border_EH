@@ -84,6 +84,6 @@ workflow SEURAT_SPLIT_PROCESS {
     emit:
     cluster_out                     = CLUSTER.out                               //Channel: [[meta], [output]]
     state_classification_out        = STATE_CLASSIFICATION.out                  //Channel: [[meta], [output]]
-    gene_modules_out                = GENE_MODULES.out                          //Channel: [[meta], [output]]
+    //gene_modules_out                = GENE_MODULES.out                          //Channel: [[meta], [output]]
 }
 

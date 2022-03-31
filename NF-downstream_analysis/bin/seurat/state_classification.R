@@ -87,7 +87,7 @@ seurat_data <- readRDS(list.files(data_path, full.names = TRUE, pattern = '*.RDS
 #                                      Cell state classification                                    #
 #######################################################################################
 # Convert knowledge matrix to gene list
-temp = list.files(pattern = (paste0(data_path, "*.csv"))
+temp = list.files(pattern = (paste0(data_path, "*.csv")))
 print(temp)
 cell_state_markers <- read.csv(temp, row.names = 1) %>% select(!c(evidence))
 #cell_state_markers <- read.csv("binary_knowledge_matrix_contam.csv", row.names = 1) %>% select(!c(evidence))

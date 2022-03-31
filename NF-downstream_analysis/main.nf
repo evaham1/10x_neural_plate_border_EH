@@ -117,4 +117,8 @@ workflow {
     // Transfer labels from stage subsets to full data
     TRANSFER_LABELS( ch_combined )
 
+
+    // Prepare RNA objects for integration with ATAC
+    INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
+
 }

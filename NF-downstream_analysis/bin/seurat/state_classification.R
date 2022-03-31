@@ -23,16 +23,19 @@ opt = getopt(spec)
 scHelper_cell_type_order <- c('EE', 'NNE', 'pEpi', 'PPR', 'aPPR', 'pPPR',
                         'eNPB', 'NPB', 'aNPB', 'pNPB','NC', 'dNC',
                         'eN', 'eCN', 'NP', 'pNP', 'HB', 'iNP', 'MB', 
-                        'aNP', 'FB', 'vFB', 'node', 'streak')
+                        'aNP', 'FB', 'vFB', 'node', 'streak', 
+                        'PGC', 'BI', 'meso', 'endo')
 
 scHelper_cell_type_colours <- c("#ed5e5f", "#A73C52", "#6B5F88", "#3780B3", "#3F918C", "#47A266", "#53A651", "#6D8470",
                           "#87638F", "#A5548D", "#C96555", "#ED761C", "#FF9508", "#FFC11A", "#FFEE2C", "#EBDA30",
-                          "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#b3b3b3")
+                          "#CC9F2C", "#AD6428", "#BB614F", "#D77083", "#F37FB8", "#DA88B3", "#B990A6", "#b3b3b3",
+                          "#786D73", "#581845", "#9792A3", "#BBB3CB")
 
 names(scHelper_cell_type_colours) <- c('NNE', 'HB', 'eNPB', 'PPR', 'aPPR', 'streak',
                                  'pPPR', 'NPB', 'aNPB', 'pNPB','eCN', 'dNC',
                                  'eN', 'NC', 'NP', 'pNP', 'EE', 'iNP', 'MB', 
-                                 'vFB', 'aNP', 'node', 'FB', 'pEpi')
+                                 'vFB', 'aNP', 'node', 'FB', 'pEpi',
+                                 'PGC', 'BI', 'meso', 'endo')
 
 stage_order <- c("HH4", "HH5", "HH6", "HH7", "ss4", "ss8")
 ############################################################################################
@@ -84,28 +87,36 @@ seurat_data <- readRDS(list.files(data_path, full.names = TRUE, pattern = '*.RDS
 #                                      Cell state classification                                    #
 #######################################################################################
 # Convert knowledge matrix to gene list
-# cell_state_markers <- read.csv('./NF-downstream_analysis/binary_knowledge_matrix.csv', row.names = 1) %>% select(!c(evidence, PPR, NP, NPB, iNP))
-cell_state_markers <- read.csv(list.files(data_path, full.names = TRUE, pattern = '*.csv'), row.names = 1) %>% select(!c(evidence))
+temp = list.files(pattern = (paste0(data_path, "*.csv"))
+print(temp)
+cell_state_markers <- read.csv(temp, row.names = 1) %>% select(!c(evidence))
+#cell_state_markers <- read.csv("binary_knowledge_matrix_contam.csv", row.names = 1) %>% select(!c(evidence))
 
 cell_state_markers <- apply(cell_state_markers, 2, function(x) rownames(cell_state_markers)[x > 0])
 
 cell_states = list(
-  HH4 = c('NNE', 'node', 'streak', 'EE', 'eNPB', 'eN', 'eCN'),
+  HH4 = c('NNE', 'node', 'streak', 'EE', 'eNPB', 'eN', 'eCN', 
+          'PGC', 'BI', 'meso', 'endo'),
 
   HH5 = c('NNE', 'node', 'streak', 'EE', 'eNPB', 'eN', 'eCN',
-          'NPB', 'aNPB', 'pNPB', 'NP', 'pNP', 'iNP', 'aNP', 'PPR', 'aPPR', 'pPPR'),
+          'NPB', 'aNPB', 'pNPB', 'NP', 'pNP', 'iNP', 'aNP', 'PPR', 'aPPR', 'pPPR',
+          'PGC', 'BI', 'meso', 'endo'),
   
   HH6 = c('NNE', 'node', 'streak', 'eN', 'eCN',
-          'NPB', 'aNPB', 'pNPB', 'NP', 'pNP', 'iNP', 'aNP', 'PPR', 'aPPR', 'pPPR'),
+          'NPB', 'aNPB', 'pNPB', 'NP', 'pNP', 'iNP', 'aNP', 'PPR', 'aPPR', 'pPPR',
+          'PGC', 'BI', 'meso', 'endo'),
 
   HH7 = c('pEpi', 'NPB', 'aNPB', 'pNPB', 'NC', 'dNC', 'NP', 'pNP', 'iNP',
-          'aNP', 'HB', 'MB', 'FB', 'vFB', 'PPR', 'aPPR', 'pPPR'),
+          'aNP', 'HB', 'MB', 'FB', 'vFB', 'PPR', 'aPPR', 'pPPR',
+          'PGC', 'BI', 'meso', 'endo'),
 
   ss4 = c('pEpi', 'NPB', 'aNPB', 'pNPB', 'NC', 'dNC', 'NP', 'pNP', 'iNP',
-          'aNP', 'HB', 'MB', 'FB', 'vFB', 'PPR', 'aPPR', 'pPPR'),
+          'aNP', 'HB', 'MB', 'FB', 'vFB', 'PPR', 'aPPR', 'pPPR',
+          'PGC', 'BI', 'meso', 'endo'),
 
   ss8 = c('pEpi', 'NPB', 'aNPB', 'pNPB', 'NC', 'dNC', 'NP', 'pNP', 'iNP',
-          'aNP', 'HB', 'MB', 'FB', 'vFB', 'PPR', 'aPPR', 'pPPR')
+          'aNP', 'HB', 'MB', 'FB', 'vFB', 'PPR', 'aPPR', 'pPPR',
+          'PGC', 'BI', 'meso', 'endo')
 )
 
 cell_state_markers <- lapply(cell_states, function(x) cell_state_markers[names(cell_state_markers) %in% x])

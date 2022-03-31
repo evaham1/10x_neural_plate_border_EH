@@ -59,11 +59,25 @@ include {SEURAT_SPLIT_PROCESS as SEURAT_STAGE_PROCESS} from "$baseDir/subworkflo
 include {R as TRANSFER_LABELS} from "$baseDir/modules/local/r/main"                                                                     addParams(  options:                                modules['transfer_labels'],
                                                                                                                                                     script:                                 analysis_scripts.transfer_labels )
 
+// Subworkflow to create new schelper labels on data with contamination
+include {SEURAT_SPLIT_PROCESS as SEURAT_STAGE_PROCESS_CONTAM} from "$baseDir/subworkflows/seurat_split_process/main"                           addParams(  split_options:                          modules['stage_split'],
+                                                                                                                                                    cluster_options:                        modules['stage_cluster_contam'],
+                                                                                                                                                    gene_modules_options:                   modules['stage_gene_modules'],
+                                                                                                                                                    state_classification_options:           modules['stage_state_classification_contam'],
+                                                                                                                                                    seurat_h5ad_options:                    modules['seurat_h5ad'],
+                                                                                                                                                    seurat_intersect_loom_options:          modules['stage_seurat_intersect_loom'],
+                                                                                                                                                    scvelo_run_options:                     modules['stage_scvelo_run'])
+
+
 
 // Set channel for binary knowledge matrix for cell state classification
 Channel
     .value("$baseDir/binary_knowledge_matrix.csv")
     .set{ch_binary_knowledge_matrix}
+
+Channel
+    .value("$baseDir/binary_knowledge_matrix_contam.csv")
+    .set{ch_binary_knowledge_matrix_contam}
 
 workflow {
     METADATA( params.input )
@@ -117,8 +131,14 @@ workflow {
     // Transfer labels from stage subsets to full data
     TRANSFER_LABELS( ch_combined )
 
+    /*------------------------------------------------------------------------------------*/
+    /* Prepare data for integration with ATAC
+    --------------------------------------------------------------------------------------*/  
 
-    // Prepare RNA objects for integration with ATAC
-    INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
+    // Re-run classification but including contaminating populations
+    SEURAT_STAGE_PROCESS_CONTAM( SEURAT_FILTERING.out.cell_cycle_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix_contam )
+    
+    // Extract original scHelper cell type labels and combine these with new labels
+    //INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out, SEURAT_STAGE_PROCESS_CONTAM.out )
 
 }

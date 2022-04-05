@@ -138,7 +138,17 @@ workflow {
     // Re-run classification but including contaminating populations
     SEURAT_STAGE_PROCESS_CONTAM( SEURAT_FILTERING.out.cell_cycle_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix_contam )
     
-    // Extract original scHelper cell type labels and combine these with new labels
-    //INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out, SEURAT_STAGE_PROCESS_CONTAM.out )
+    // Extract original scHelper cell type labels and add to data
+    INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
+
+    // Collect rds files from all stages with new labels and label transfer to old labelled data
+    ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out
+        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
+        .collect()
+        .map { [[sample_id:'all_stages'], it] } // [[meta], [rds1, rds2, rds3, ...]]
+        .combine( INTEGRATION_PREP.out ) //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5], [sample_id:NF-scRNA-input], [rds_files, plots]]
+        .map{[it[0], it[1] + it[3]]} //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5, rds_files, plots]
+        //.view() //[[sample_id:all_stages], [HH6, HH4, ss8, ss4, HH7, HH5, cell_cycle_data.RDS]]
+    TRANSFER_LABELS( ch_labels )
 
 }

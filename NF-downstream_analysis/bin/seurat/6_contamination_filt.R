@@ -1,5 +1,11 @@
 #!/usr/bin/env Rscript
 
+### need to check this interactively first with inputting params
+# filter option used to switch between identifying contamiantion and filtering contam
+# group_by option used to determine the metadata column to add the information about contaminating cell states
+### then need to set params to run it in the original stage split process
+### finally need to adjust params to run it in the prep_integration workflow
+
 # Load packages
 library(getopt)
 library(Seurat)
@@ -13,11 +19,21 @@ library(RColorBrewer)
 library(tidyverse)
 library(scHelper)
 
-spec = matrix(c(
-  'runtype', 'l', 2, "character",
-  'cores'   , 'c', 2, "integer"
-), byrow=TRUE, ncol=4)
-opt = getopt(spec)
+# Read in command line opts
+option_list <- list(
+    make_option(c("-r", "--runtype"), action = "store", type = "character", help = "Specify whether running through through 'nextflow' in order to switch paths"),
+    make_option(c("-c", "--cores"), action = "store", type = "integer", help = "Number of CPUs"),
+    make_option(c("-g", "--filter"), action = "store", type = "character", help = "Boolean to determine whether to filter data or label contaminating clusters", default = 'TRUE'),
+    make_option(c("-g", "--group_by"), action = "store", type = "character", help = "Column to group metadata by", default = 'scHelper_cell_type'),
+    make_option(c("", "--verbose"), action = "store_true", type = "logical", help = "Verbose", default = FALSE)
+    )
+
+opt_parser = OptionParser(option_list = option_list)
+opt <- parse_args(opt_parser)
+if(opt$verbose) print(opt)
+if(filter !%in% c(TRUE, FALSE){
+  print("ERROR: 'filter' option must be TRUE or FALSE")
+})
 
 # Set paths and load data
 {
@@ -58,7 +74,7 @@ contamination_filt_data <- readRDS(list.files(data_path, full.names = TRUE))
 #####################################################################################################
 
 # Set RNA to default assay for plotting expression data
-DefaultAssay(contamination_filt_data) <- "RNA"
+DefaultAssay(seurat_data) <- "RNA"
 
 # Make gene list containing markers used to identify contamination clusters
 genes <- list('PGC module' = 'DAZL',
@@ -66,122 +82,154 @@ genes <- list('PGC module' = 'DAZL',
               'Mesoderm module' = c('CDX2', 'GATA6', 'ALX1', 'PITX2', 'TWIST1', 'TBXT', 'MESP1'),
               'Endoderm module' = c('SOX17', 'CXCR4', 'FOXA2', 'NKX2-2', 'GATA6'))
 
-
 # Calculate average module expression for contamination gene list
-contamination_filt_data <- AverageGeneModules(seurat_obj = contamination_filt_data, gene_list = genes)
+seurat_data <- AverageGeneModules(seurat_obj = seurat_data, gene_list = genes)
 
 # Plot distribution of contamination gene modules
 png(paste0(plot_path, "ContaminationClustersBoxPLot.png"), width = 40, height = 30, units = "cm", res = 200)
-PlotCelltype(seurat_obj = contamination_filt_data, gene_list = genes, quantiles = c(0.1, 0.90), ncol = 2)
+PlotCelltype(seurat_obj = seurat_data, gene_list = genes, quantiles = c(0.1, 0.90), ncol = 2)
 graphics.off()
-
-contaminating_clusters <- IdentifyOutliers(seurat_obj = contamination_filt_data, metrics = names(genes), quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
-
-
-# Plot UMAP for poor quality clusters
-png(paste0(plot_path, "ContaminationClustersUMAP.png"), width=40, height=20, units = 'cm', res = 200)
-ClusterDimplot(contamination_filt_data, clusters = contaminating_clusters, plot_title = 'Contamination')
-graphics.off()
-
 
 # Plot UMAPs for GOI
 ncol = 4
 png(paste0(plot_path, "UMAP_GOI.png"), width = ncol*10, height = 10*ceiling((length(unlist(genes))+1)/ncol), units = "cm", res = 200)
-MultiFeaturePlot(seurat_obj = contamination_filt_data, gene_list = unlist(genes), plot_clusters = T,
+MultiFeaturePlot(seurat_obj = seurat_data, gene_list = unlist(genes), plot_clusters = T,
                  plot_stage = T, label = "", cluster_col = "integrated_snn_res.0.5", n_col = ncol)
 graphics.off()
 
-
 # Dotplot for identifying PGCs, Early mesoderm and Late mesoderm
 png(paste0(plot_path, "dotplot_GOI.png"), width = 30, height = 12, units = "cm", res = 200)
-DotPlot(contamination_filt_data, features = unique(unlist(genes)))
+DotPlot(seurat_data, features = unique(unlist(genes)))
 graphics.off()
 
 
-############################### Remove contaminating cells from clusters ########################################
+############################### Identify and label contaminating clusters ########################################
+# Add labels into group_by column based on identified contaminating cell states
 
-filter_cells <- rownames(filter(contamination_filt_data@meta.data, seurat_clusters %in% contaminating_clusters))
+if (filter == FALSE) {
+  
+  PGC_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'PGC module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
+  BI_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Blood island module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
+  Mesoderm_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Mesoderm module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
+  Endoderm_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Endoderm module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 
-contamination_filt_data <- subset(contamination_filt_data, cells = filter_cells, invert = T)
+  seurat_data@meta.data <- seurat_data@meta.data %>%
+    mutate(!!group_by = case_when(seurat_clusters %in% PGC_clusters ~ "Contam: PGC",
+         seurat_clusters %in% BI_clusters ~ "Contam: BI",
+         seurat_clusters %in% Mesoderm_clusters ~ "Contam: Mesoderm",
+         seurat_clusters %in% Endoderm_clusters ~ "Contam: Endoderm"))
+  
+  saveRDS(seurat_data, paste0(rds_path, "contamination_identified.RDS"), compress = FALSE)
+         
+  ####  PLOTS ####
+  png(paste0(plot_path, "IdentifiedContam_UMAP.png"), width=40, height=20, units = 'cm', res = 200)
+  DimPlot(seurat_data, group.by = !!group_by)
+  graphics.off()
 
-# Re-run findvariablefeatures and scaling
-contamination_filt_data <- FindVariableFeatures(contamination_filt_data, selection.method = "vst", nfeatures = 2000, assay = 'RNA')
+  png(paste0(plot_path, "ContaminationClustersUMAP_PGC.png"), width=40, height=20, units = 'cm', res = 200)
+  ClusterDimplot(seurat_data, clusters = PGC_clusters, plot_title = 'Contamination PGC')
+  graphics.off()
 
-contamination_filt_data <- ScaleData(contamination_filt_data, features = rownames(contamination_filt_data), vars.to.regress = c("percent.mt", "sex", "S.Score", "G2M.Score"))
+  png(paste0(plot_path, "ContaminationClustersUMAP_BI.png"), width=40, height=20, units = 'cm', res = 200)
+  ClusterDimplot(seurat_data, clusters = BI_clusters, plot_title = 'Contamination BI')
+  graphics.off()
 
-# Set Integrated to default assay
-DefaultAssay(contamination_filt_data) <- "integrated"
+  png(paste0(plot_path, "ContaminationClustersUMAP_mesoderm.png"), width=40, height=20, units = 'cm', res = 200)
+  ClusterDimplot(seurat_data, clusters = Mesoderm_clusters, plot_title = 'Contamination Mesoderm')
+  graphics.off()
 
-# Rescale data on integrated assay
-contamination_filt_data <- ScaleData(contamination_filt_data, features = rownames(contamination_filt_data), vars.to.regress = c("percent.mt", "sex", "S.Score", "G2M.Score"))
+  png(paste0(plot_path, "ContaminationClustersUMAP_endoderm.png"), width=40, height=20, units = 'cm', res = 200)
+  ClusterDimplot(seurat_data, clusters = Endoderm_clusters, plot_title = 'Contamination Endoderm')
+  graphics.off()
 
-# PCA
-contamination_filt_data <- RunPCA(object = contamination_filt_data, verbose = FALSE)
+}
 
-png(paste0(plot_path, "dimHM.png"), width=30, height=50, units = 'cm', res = 200)
-DimHeatmap(contamination_filt_data, dims = 1:30, balanced = TRUE, cells = 500)
-graphics.off()
+############################### OR filter contaminating clusters ########################################
 
-png(paste0(plot_path, "ElbowCutoff.png"), width=30, height=20, units = 'cm', res = 200)
-ElbowCutoff(contamination_filt_data, return = 'plot')
-graphics.off()
+if (filter == TRUE){
 
-# automatically determine elbow
-pc_cutoff <- ElbowCutoff(contamination_filt_data)
+  contaminating_clusters <- IdentifyOutliers(seurat_obj = contamination_filt_data, metrics = names(genes), quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 
-png(paste0(plot_path, "UMAP_PCA_comparison.png"), width=40, height=30, units = 'cm', res = 200)
-PCALevelComparison(contamination_filt_data, PCA_levels = c(pc_cutoff-5, pc_cutoff, pc_cutoff+5, pc_cutoff+10), cluster_res = 0.5)
-graphics.off()
+  # Plot UMAP for poor quality clusters
+  png(paste0(plot_path, "ContaminationClustersUMAP.png"), width=40, height=20, units = 'cm', res = 200)
+  ClusterDimplot(contamination_filt_data, clusters = contaminating_clusters, plot_title = 'Contamination')
+  graphics.off()
 
-contamination_filt_data <- FindNeighbors(contamination_filt_data, dims = 1:pc_cutoff, verbose = FALSE)
-contamination_filt_data <- RunUMAP(contamination_filt_data, dims = 1:pc_cutoff, verbose = FALSE)
+  filter_cells <- rownames(filter(contamination_filt_data@meta.data, seurat_clusters %in% contaminating_clusters))
+  contamination_filt_data <- subset(contamination_filt_data, cells = filter_cells, invert = T)
 
-# Find optimal cluster resolution
-png(paste0(plot_path, "clustree.png"), width=70, height=35, units = 'cm', res = 200)
-ClustRes(seurat_object = contamination_filt_data, starting_res = 1, by = 0.2, prefix = "integrated_snn_res.")
-graphics.off()
+  # Re-run findvariablefeatures and scaling
+  contamination_filt_data <- FindVariableFeatures(contamination_filt_data, selection.method = "vst", nfeatures = 2000, assay = 'RNA')
+  contamination_filt_data <- ScaleData(contamination_filt_data, features = rownames(contamination_filt_data), vars.to.regress = c("percent.mt", "sex", "S.Score", "G2M.Score"))
 
-# Use high clustering resolution to ensure we capture most cell states
-contamination_filt_data <- FindClusters(contamination_filt_data, resolution = 2)
+  # Set Integrated to default assay
+  DefaultAssay(contamination_filt_data) <- "integrated"
 
-# Plot UMAP for clusters and developmental stage
-png(paste0(plot_path, "UMAP.png"), width=40, height=20, units = 'cm', res = 200)
-ClustStagePlot(contamination_filt_data, stage_col = "stage")
-graphics.off()
+  # Rescale data on integrated assay
+  contamination_filt_data <- ScaleData(contamination_filt_data, features = rownames(contamination_filt_data), vars.to.regress = c("percent.mt", "sex", "S.Score", "G2M.Score"))
 
-# Check integration on final filtered data
-png(paste0(plot_path, "CheckIntegration.png"), width = 45, height = 15, res = 200, units = "cm")
-CheckIntegration(contamination_filt_data, xlim = c(-10, 10), ylim = c(-10, 10))
-graphics.off()
+  # PCA
+  contamination_filt_data <- RunPCA(object = contamination_filt_data, verbose = FALSE)
 
-# Plot QC for each cluster
-png(paste0(plot_path, "QCPlot.png"), width=40, height=28, units = 'cm', res = 200)
-QCPlot(contamination_filt_data)
-graphics.off()
+  png(paste0(plot_path, "dimHM.png"), width=30, height=50, units = 'cm', res = 200)
+  DimHeatmap(contamination_filt_data, dims = 1:30, balanced = TRUE, cells = 500)
+  graphics.off()
 
-# Find differentially expressed genes and plot heatmap of top DE genes for each cluster
-markers <- FindAllMarkers(contamination_filt_data, only.pos = T, logfc.threshold = 0.25, assay = "RNA")
-# get automated cluster order based on percentage of cells in adjacent stages
-cluster_order = OrderCellClusters(seurat_object = contamination_filt_data, col_to_sort = 'seurat_clusters', sort_by = 'stage')
-# Re-order genes in top15 based on desired cluster order in subsequent plot - this orders them in the heatmap in the correct order
-top15 <- markers %>% group_by(cluster) %>% top_n(n = 15, wt = avg_log2FC) %>% arrange(factor(cluster, levels = cluster_order))
+  png(paste0(plot_path, "ElbowCutoff.png"), width=30, height=20, units = 'cm', res = 200)
+  ElbowCutoff(contamination_filt_data, return = 'plot')
+  graphics.off()
 
-png(paste0(plot_path, 'HM.top15.DE.contamination_filt_data.png'), height = 75, width = 100, units = 'cm', res = 500)
-TenxPheatmap(data = contamination_filt_data, metadata = c("seurat_clusters", "stage"), custom_order_column = "seurat_clusters",
+  # automatically determine elbow
+  pc_cutoff <- ElbowCutoff(contamination_filt_data)
+
+  png(paste0(plot_path, "UMAP_PCA_comparison.png"), width=40, height=30, units = 'cm', res = 200)
+  PCALevelComparison(contamination_filt_data, PCA_levels = c(pc_cutoff-5, pc_cutoff, pc_cutoff+5, pc_cutoff+10), cluster_res = 0.5)
+  graphics.off()
+
+  contamination_filt_data <- FindNeighbors(contamination_filt_data, dims = 1:pc_cutoff, verbose = FALSE)
+  contamination_filt_data <- RunUMAP(contamination_filt_data, dims = 1:pc_cutoff, verbose = FALSE)
+
+  # Find optimal cluster resolution
+  png(paste0(plot_path, "clustree.png"), width=70, height=35, units = 'cm', res = 200)
+  ClustRes(seurat_object = contamination_filt_data, starting_res = 1, by = 0.2, prefix = "integrated_snn_res.")
+  graphics.off()
+
+  # Use high clustering resolution to ensure we capture most cell states
+  contamination_filt_data <- FindClusters(contamination_filt_data, resolution = 2)
+
+  # Plot UMAP for clusters and developmental stage
+  png(paste0(plot_path, "UMAP.png"), width=40, height=20, units = 'cm', res = 200)
+  ClustStagePlot(contamination_filt_data, stage_col = "stage")
+  graphics.off()
+
+  # Check integration on final filtered data
+  png(paste0(plot_path, "CheckIntegration.png"), width = 45, height = 15, res = 200, units = "cm")
+  CheckIntegration(contamination_filt_data, xlim = c(-10, 10), ylim = c(-10, 10))
+  graphics.off()
+
+  # Plot QC for each cluster
+  png(paste0(plot_path, "QCPlot.png"), width=40, height=28, units = 'cm', res = 200)
+  QCPlot(contamination_filt_data)
+  graphics.off()
+
+  # Find differentially expressed genes and plot heatmap of top DE genes for each cluster
+  markers <- FindAllMarkers(contamination_filt_data, only.pos = T, logfc.threshold = 0.25, assay = "RNA")
+  # get automated cluster order based on percentage of cells in adjacent stages
+  cluster_order = OrderCellClusters(seurat_object = contamination_filt_data, col_to_sort = 'seurat_clusters', sort_by = 'stage')
+  # Re-order genes in top15 based on desired cluster order in subsequent plot - this orders them in the heatmap in the correct order
+  top15 <- markers %>% group_by(cluster) %>% top_n(n = 15, wt = avg_log2FC) %>% arrange(factor(cluster, levels = cluster_order))
+
+  png(paste0(plot_path, 'HM.top15.DE.contamination_filt_data.png'), height = 75, width = 100, units = 'cm', res = 500)
+  TenxPheatmap(data = contamination_filt_data, metadata = c("seurat_clusters", "stage"), custom_order_column = "seurat_clusters",
              custom_order = cluster_order, selected_genes = unique(top15$gene), gaps_col = "seurat_clusters", assay = 'RNA')
-graphics.off()
+  graphics.off()
 
-# # Plot gene variance grouped by stage
-# png(paste0(plot_path, 'gene_variance.png'), height = 10, width = 15, units = 'cm', res = 200)
-# PlotGeneVariance(seurat_obj = contamination_filt_data, group_by = "stage")
-# graphics.off()
+  # Plot feature plots for all variable genes
+  # Set RNA to default assay
+  DefaultAssay(contamination_filt_data) <- "RNA"
 
-# Plot feature plots for all variable genes
-# Set RNA to default assay
-DefaultAssay(contamination_filt_data) <- "RNA"
-
-dir.create(paste0(plot_path, 'feature_plots/'))
-for(i in contamination_filt_data@assays$RNA@var.features){
+  dir.create(paste0(plot_path, 'feature_plots/'))
+  for(i in contamination_filt_data@assays$RNA@var.features){
     png(paste0(plot_path, 'feature_plots/', i, '.png'), height = 12, width = 12, units = 'cm', res = 100)
     print(
       FeaturePlot(contamination_filt_data, features = i, pt.size = 1.4) +
@@ -191,20 +239,20 @@ for(i in contamination_filt_data@assays$RNA@var.features){
           legend.key.size = unit(1, 'cm'))
         )
     graphics.off()
-}
+  }
+  system(paste0("zip -rj ", plot_path, "feature_plots.zip ", paste0(plot_path, 'feature_plots/')))
+  unlink(paste0(plot_path, 'feature_plots/'), recursive=TRUE, force=TRUE)
 
-system(paste0("zip -rj ", plot_path, "feature_plots.zip ", paste0(plot_path, 'feature_plots/')))
-unlink(paste0(plot_path, 'feature_plots/'), recursive=TRUE, force=TRUE)
+  # Plot remaining cell counts
+  filt_counts <- contamination_filt_data@meta.data %>%
+    group_by(orig.ident) %>%
+    tally() %>%
+    rename('filtered' := n)
 
-# Plot remaining cell counts
-filt_counts <- contamination_filt_data@meta.data %>%
-  group_by(orig.ident) %>%
-  tally() %>%
-  rename('filtered' := n)
-
-png(paste0(plot_path, 'remaining_cell_table.png'), height = 10, width = 18, units = 'cm', res = 400)
-grid.arrange(top=textGrob("Remaining Cell Count", gp=gpar(fontsize=12, fontface = "bold"), hjust = 0.5, vjust = 3),
+  png(paste0(plot_path, 'remaining_cell_table.png'), height = 10, width = 18, units = 'cm', res = 400)
+  grid.arrange(top=textGrob("Remaining Cell Count", gp=gpar(fontsize=12, fontface = "bold"), hjust = 0.5, vjust = 3),
              tableGrob(filt_counts, rows=NULL, theme = ttheme_minimal()))
-graphics.off()
+  graphics.off()
 
-saveRDS(contamination_filt_data, paste0(rds_path, "contamination_filt_data.RDS"), compress = FALSE)
+  saveRDS(contamination_filt_data, paste0(rds_path, "contamination_filt_data.RDS"), compress = FALSE)
+}

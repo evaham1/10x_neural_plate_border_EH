@@ -49,7 +49,7 @@ workflow INTEGRATION_PREP {
         .map { [[sample_id:'tranfer_labels'], it] } // [[meta], [rds1, rds2, rds3, ...]]
         .set{ ch_combined }
 
-    // TRANSFER_LABELS_OLD( ch_combined )
+    TRANSFER_LABELS_OLD( ch_combined )
 
     // // Subset the input data to remove HH4
     // SUBSET( TRANSFER_LABELS_OLD.out )

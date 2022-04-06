@@ -1,12 +1,5 @@
 #!/usr/bin/env Rscript
 
-### need to check this interactively first with inputting params
-# filter option used to switch between identifying contamiantion and filtering contam
-# group_by option used to determine the metadata column to add the information about contaminating cell states
-# group_by = "scHelper_cell_type"
-### then need to set params to run it in the original stage split process
-### finally need to adjust params to run it in the prep_integration workflow
-
 # Load packages
 library(getopt)
 library(Seurat)
@@ -32,18 +25,24 @@ option_list <- list(
 opt_parser = OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 if(opt$verbose) print(opt)
-if(filter !%in% c(TRUE, FALSE){
-  print("ERROR: 'filter' option must be TRUE or FALSE")
-})
+
+#filter = "FALSE"
+#group_by = "scHelper_cell_type"
+
+if(filter %in% c(TRUE, FALSE)){
+  print(paste0("Filtering param is set to ", filter))
+} else {
+    print("Execution stopped. 'filter' needs to be set to TRUE or FALSE");stop()
+  }
 
 # Set paths and load data
 {
   if(length(commandArgs(trailingOnly = TRUE)) == 0){
     cat('No command line arguments provided, paths are set for running interactively in Rstudio server\n')
     
-    plot_path = "./output/NF-downstream_analysis/6_contamination_filt/plots/"
-    rds_path = "./output/NF-downstream_analysis/6_contamination_filt/rds_files/"
-    data_path = "./output/NF-downstream_analysis/5_cell_cycle/rds_files/"
+    plot_path = "./output/NF-downstream_analysis_stacas/seurat_filtering/6_contamination_filt/plots/"
+    rds_path = "./output/NF-downstream_analysis_stacas/seurat_filtering/6_contamination_filt/rds_files/"
+    data_path = "./output/NF-downstream_analysis_stacas/seurat_filtering/5_cell_cycle/rds_files/"
     
     ncores = 8
     
@@ -68,7 +67,7 @@ if(filter !%in% c(TRUE, FALSE){
   dir.create(rds_path, recursive = T)
 }
 
-contamination_filt_data <- readRDS(list.files(data_path, full.names = TRUE))
+seurat_data <- readRDS(list.files(data_path, full.names = TRUE))
 
 #####################################################################################################
 #                           Identify and remove contamination (mesoderm and PGCs)                   #
@@ -115,7 +114,7 @@ if (filter == FALSE) {
   Endoderm_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Endoderm module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 
   seurat_data@meta.data <- seurat_data@meta.data %>%
-    mutate(!!group_by = case_when(seurat_clusters %in% PGC_clusters ~ "Contam: PGC",
+    mutate(!!group_by := case_when(seurat_clusters %in% PGC_clusters ~ "Contam: PGC",
          seurat_clusters %in% BI_clusters ~ "Contam: BI",
          seurat_clusters %in% Mesoderm_clusters ~ "Contam: Mesoderm",
          seurat_clusters %in% Endoderm_clusters ~ "Contam: Endoderm"))
@@ -124,7 +123,7 @@ if (filter == FALSE) {
          
   ####  PLOTS ####
   png(paste0(plot_path, "IdentifiedContam_UMAP.png"), width=40, height=20, units = 'cm', res = 200)
-  DimPlot(seurat_data, group.by = !!group_by)
+  DimPlot(seurat_data, group.by = group_by)
   graphics.off()
 
   png(paste0(plot_path, "ContaminationClustersUMAP_PGC.png"), width=40, height=20, units = 'cm', res = 200)

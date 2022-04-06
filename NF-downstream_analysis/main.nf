@@ -78,9 +78,9 @@ include {INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/m
 
 include {R as TRANSFER_LABELS_INTEGRATION} from "$baseDir/modules/local/r/main"                                                                     addParams(  options:                    modules['transfer_labels_integration'],
                                                                                                                                                     script:                                 analysis_scripts.transfer_labels )
-include {R as SPLIT_STAGE_INTEGRATION} from "$baseDir/modules/local/r/main"                     addParams(  options: modules['split_integration'],
+include {R as SPLIT_STAGE_INTEGRATION} from "$baseDir/modules/local/r/main"                     addParams(  options: modules['split_stage_integration'],
                                                                                                 script: analysis_scripts.split )
-include {R as CLUSTER_STAGE_INTEGRATION} from "$baseDir/modules/local/r/main"                   addParams(  options: params.cluster_options,
+include {R as CLUSTER_STAGE_INTEGRATION} from "$baseDir/modules/local/r/main"                   addParams(  options: modules['cluster_stage_integration'],
                                                                                                 script: analysis_scripts.cluster )
 
 
@@ -174,11 +174,11 @@ workflow {
 
     // Split data so can integrate stage by stage
     SPLIT_STAGE_INTEGRATION( TRANSFER_LABELS_INTEGRATION.out )
-    SPLIT.out
-        .map {row -> [row[0], row[1].findAll { it =~ ".*rds_files" }]}
-        .flatMap {it[1][0].listFiles()}
-        .map { row -> [[sample_id:row.name.replaceFirst(~/\.[^\.]+$/, '')], row] }
-        .set { ch_split_run }  
-    CLUSTER_STAGE_INTEGRATION( ch_split_run )
+    // SPLIT.out
+    //     .map {row -> [row[0], row[1].findAll { it =~ ".*rds_files" }]}
+    //     .flatMap {it[1][0].listFiles()}
+    //     .map { row -> [[sample_id:row.name.replaceFirst(~/\.[^\.]+$/, '')], row] }
+    //     .set { ch_split_run }  
+    // CLUSTER_STAGE_INTEGRATION( ch_split_run )
 
 }

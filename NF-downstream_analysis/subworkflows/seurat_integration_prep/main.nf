@@ -9,15 +9,23 @@
 def analysis_scripts                                = [:]
 analysis_scripts.contamination_ident = file("$baseDir/bin/seurat/6_contamination_filt.R", checkIfExists: true)
 analysis_scripts.transfer_labels = file("$baseDir/bin/seurat/transfer_labels.R", checkIfExists: true)
+analysis_scripts.subset                             = file("$baseDir/bin/seurat/subset_cells.R", checkIfExists: true)
+analysis_scripts.cluster                            = file("$baseDir/bin/seurat/subset_cluster.R", checkIfExists: true)
 
 params.contamination_ident_options   = [:]
 params.transfer_labels_options   = [:]
+params.subset_options = [:]
+params.cluster_options                              = [:]
 
 // Include Seurat R processes
-include {R as CONTAMINATION_IDENT} from "$baseDir/modules/local/r/main"        addParams(        options: params.contamination_ident_options,
+include {R as CONTAMINATION_IDENT} from "$baseDir/modules/local/r/main"         addParams(      options: params.contamination_ident_options,
                                                                                                 script: analysis_scripts.contamination_ident )
-include {R as TRANSFER_LABELS_OLD} from "$baseDir/modules/local/r/main"           addParams(        options: params.transfer_labels_options,
+include {R as TRANSFER_LABELS_OLD} from "$baseDir/modules/local/r/main"         addParams(      options: params.transfer_labels_options,
                                                                                                 script: analysis_scripts.transfer_labels )
+include {R as SUBSET} from "$baseDir/modules/local/r/main"                      addParams(      options: params.subset_options,
+                                                                                                script: analysis_scripts.subset )
+include {R as CLUSTER} from "$baseDir/modules/local/r/main"                     addParams(      options: params.cluster_options,
+                                                                                                script: analysis_scripts.cluster )
 
 
 /*-----------------------------------------------------------------------------------------------------------------------------
@@ -51,11 +59,11 @@ workflow INTEGRATION_PREP {
 
     TRANSFER_LABELS_OLD( ch_combined )
 
-    // // Subset the input data to remove HH4
-    // SUBSET( TRANSFER_LABELS_OLD.out )
-    // CLUSTER_FULL( SUBSET.out )
+    // Subset the input data to remove HH4
+    SUBSET( TRANSFER_LABELS_OLD.out )
+    CLUSTER_FULL( SUBSET.out )
 
-    // emit:
-    // integration_ready = ch_combined
+    emit:
+    integration_ready = CLUSTER_FULL.out
 }
 

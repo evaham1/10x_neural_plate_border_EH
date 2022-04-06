@@ -38,8 +38,11 @@ dir.create(rds_path, recursive = T)
 
 # Load in data
 files <- list.files(data_path, full.names = TRUE, pattern = '*.RDS')
+print(files)
 source_data <- grep(opt$destination_data, files, invert = T, value = TRUE) # source data from which labels are extracted
+print(paste0("Source data: ", source_data))
 dest_data <- grep(opt$destination_data, files, invert = F, value = TRUE) # destination data where labels will be transfered onto
+print(paste0("Destination data: ", dest_data))
 seurat_data <- readRDS(dest_data)
 
 # Extract cell labels from source data from slot group_by_source

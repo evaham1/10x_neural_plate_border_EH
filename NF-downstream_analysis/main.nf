@@ -20,6 +20,8 @@ analysis_scripts.gene_modules_subset_latent_time    = file("$baseDir/bin/other/g
 analysis_scripts.gene_modules_npb_latent_time       = file("$baseDir/bin/other/gene_modules_npb_latent_time.R", checkIfExists: true)
 analysis_scripts.coexpression_analysis_npb          = file("$baseDir/bin/other/coexpression_analysis_npb.R", checkIfExists: true)
 analysis_scripts.coexpression_nc_ppr_modules_npb    = file("$baseDir/bin/other/coexpression_nc_ppr_modules_npb.R", checkIfExists: true)
+analysis_scripts.split                              = file("$baseDir/bin/seurat/split_seurat.R", checkIfExists: true)
+analysis_scripts.cluster                            = file("$baseDir/bin/seurat/subset_cluster.R", checkIfExists: true)
 
 /*------------------------------------------------------------------------------------*/
 /* Workflow inclusions
@@ -76,6 +78,10 @@ include {INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/m
 
 include {R as TRANSFER_LABELS_INTEGRATION} from "$baseDir/modules/local/r/main"                                                                     addParams(  options:                    modules['transfer_labels_integration'],
                                                                                                                                                     script:                                 analysis_scripts.transfer_labels )
+include {R as SPLIT_STAGE_INTEGRATION} from "$baseDir/modules/local/r/main"                     addParams(  options: modules['split_integration'],
+                                                                                                script: analysis_scripts.split )
+include {R as CLUSTER_STAGE_INTEGRATION} from "$baseDir/modules/local/r/main"                   addParams(  options: params.cluster_options,
+                                                                                                script: analysis_scripts.cluster )
 
 
 
@@ -165,5 +171,14 @@ workflow {
 
     // Transfer new labels on stages to scHelper_cell_type_new slot on old full data
     TRANSFER_LABELS_INTEGRATION( ch_labels )
+
+    // Split data so can integrate stage by stage
+    SPLIT_STAGE_INTEGRATION( TRANSFER_LABELS_INTEGRATION.out )
+    SPLIT.out
+        .map {row -> [row[0], row[1].findAll { it =~ ".*rds_files" }]}
+        .flatMap {it[1][0].listFiles()}
+        .map { row -> [[sample_id:row.name.replaceFirst(~/\.[^\.]+$/, '')], row] }
+        .set { ch_split_run }  
+    CLUSTER_STAGE_INTEGRATION( ch_split_run )
 
 }

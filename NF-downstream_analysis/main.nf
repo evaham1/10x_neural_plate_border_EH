@@ -68,6 +68,9 @@ include {SEURAT_SPLIT_PROCESS as SEURAT_STAGE_PROCESS_CONTAM} from "$baseDir/sub
                                                                                                                                                     seurat_intersect_loom_options:          modules['stage_seurat_intersect_loom'],
                                                                                                                                                     scvelo_run_options:                     modules['stage_scvelo_run'])
 
+// Subworkflow to transfer labels for integration with scATAC
+include {INTEGRATION_PREP as INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/main"                           addParams(  contamination_filt_options:             modules['contamination_ident'])
+
 
 
 // Set channel for binary knowledge matrix for cell state classification
@@ -106,39 +109,33 @@ workflow {
     MERGE_LOOM( ch_loomInput )
 
     /*------------------------------------------------------------------------------------*/
-    /* Run analysis on full filtered seurat object
-    --------------------------------------------------------------------------------------*/
-
-    //SEURAT_FILTERED_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
-
-    /*------------------------------------------------------------------------------------*/
     /* Run analysis on stage and run split
     --------------------------------------------------------------------------------------*/ 
-    //SEURAT_STAGE_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
-
-    /*------------------------------------------------------------------------------------*/
-    /* Transfer cell type labels from stage to full dataset
-    --------------------------------------------------------------------------------------*/     
-
-    // // Collect rds files from all stages
-    // ch_combined = SEURAT_STAGE_PROCESS.out.state_classification_out
-    //     .concat(SEURAT_FILTERING.out.contamination_filt_out)
-    //     .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-    //     .collect()
-    //     .map { [[sample_id:'all_stages_filtered'], it] } // [[meta], [rds1, rds2, rds3, ...]]
-
-    // // Transfer labels from stage subsets to full data
-    // TRANSFER_LABELS( ch_combined )
+    // SEURAT_STAGE_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
 
     // /*------------------------------------------------------------------------------------*/
-    // /* Prepare data for integration with ATAC
-    // --------------------------------------------------------------------------------------*/  
+    // /* Transfer cell type labels from stage to full dataset
+    // --------------------------------------------------------------------------------------*/     
 
-    // // Re-run classification but including contaminating populations
-    // SEURAT_STAGE_PROCESS_CONTAM( SEURAT_FILTERING.out.cell_cycle_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix_contam )
+    // Collect rds files from all stages
+    ch_combined = SEURAT_STAGE_PROCESS.out.state_classification_out
+        .concat(SEURAT_FILTERING.out.contamination_filt_out)
+        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
+        .collect()
+        .map { [[sample_id:'all_stages_filtered'], it] } // [[meta], [rds1, rds2, rds3, ...]]
+
+    // Transfer labels from stage subsets to full data
+    TRANSFER_LABELS( ch_combined )
+
+    /*------------------------------------------------------------------------------------*/
+    /* Prepare data for integration with ATAC
+    --------------------------------------------------------------------------------------*/  
+
+    // Re-run classification but including contaminating populations
+    SEURAT_STAGE_PROCESS_CONTAM( SEURAT_FILTERING.out.cell_cycle_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix_contam )
     
-    // // Extract original scHelper cell type labels and add to data
-    // INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
+    // Extract original scHelper cell type labels and add to data
+    INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
 
     // // Collect rds files from all stages with new labels and label transfer to old labelled data
     // ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out

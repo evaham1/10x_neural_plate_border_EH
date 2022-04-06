@@ -3,6 +3,7 @@
 ### need to check this interactively first with inputting params
 # filter option used to switch between identifying contamiantion and filtering contam
 # group_by option used to determine the metadata column to add the information about contaminating cell states
+# group_by = "scHelper_cell_type"
 ### then need to set params to run it in the original stage split process
 ### finally need to adjust params to run it in the prep_integration workflow
 

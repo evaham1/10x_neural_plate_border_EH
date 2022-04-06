@@ -74,6 +74,9 @@ include {INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/m
                                                                                                                            subset_options:                          modules['subset_remove_HH4'],
                                                                                                                            cluster_options:                         modules['HH4_subset_cluster'],)
 
+include {R as TRANSFER_LABELS_INTEGRATION} from "$baseDir/modules/local/r/main"                                                                     addParams(  options:                    modules['transfer_labels_integration'],
+                                                                                                                                                    script:                                 analysis_scripts.transfer_labels )
+
 
 
 // Set channel for binary knowledge matrix for cell state classification
@@ -134,20 +137,22 @@ workflow {
     /* Prepare data for integration with ATAC
     --------------------------------------------------------------------------------------*/  
 
-    // Re-run classification but including contaminating populations
+    // Re-run classification but including contaminating populations - in scHelper_cell_type slot
     SEURAT_STAGE_PROCESS_CONTAM( SEURAT_FILTERING.out.cell_cycle_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix_contam )
     
-    // Extract original scHelper cell type labels and add to data
+    // Extract original scHelper cell type labels and add to data - in scHelper_cell_type slot
     INTEGRATION_PREP( SEURAT_FILTERING.out.cell_cycle_out, TRANSFER_LABELS.out )
 
-    // // Collect rds files from all stages with new labels and label transfer to old labelled data
-    // ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out
-    //     .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-    //     .collect()
-    //     .map { [[sample_id:'all_stages'], it] } // [[meta], [rds1, rds2, rds3, ...]]
-    //     .combine( INTEGRATION_PREP.out ) //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5], [sample_id:NF-scRNA-input], [rds_files, plots]]
-    //     .map{[it[0], it[1] + it[3]]} //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5, rds_files, plots]
-    //     //.view() //[[sample_id:all_stages], [HH6, HH4, ss8, ss4, HH7, HH5, cell_cycle_data.RDS]]
-    // TRANSFER_LABELS( ch_labels )
+    // Collect rds files from all stages with new labels and the full data with old labels
+    ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out.STATE_CLASSIFICATION.out
+        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
+        .collect()
+        .map { [[sample_id:'all_stages'], it] } // [[meta], [rds1, rds2, rds3, ...]]
+        .combine( INTEGRATION_PREP.out.cluster_out ) //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5], [sample_id:NF-scRNA-input], [rds_files, plots]]
+        .map{[it[0], it[1] + it[3]]} //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5, rds_files, plots]
+        //.view() //[[sample_id:all_stages], [HH6, HH4, ss8, ss4, HH7, HH5, cell_cycle_data.RDS]]
+
+    // Transfer new labels on stages to scHelper_cell_type_new slot on old full data
+    TRANSFER_LABELS_INTEGRATION( ch_labels )
 
 }

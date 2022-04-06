@@ -30,12 +30,6 @@ if(opt$verbose) print(opt)
 #filter = "FALSE"
 #group_by = "scHelper_cell_type"
 
-if(filter %in% c(TRUE, FALSE)){
-  print(paste0("Filtering param is set to ", filter))
-} else {
-    print("Execution stopped. 'filter' needs to be set to TRUE or FALSE");stop()
-  }
-
 # Set paths and load data
 {
   if(length(commandArgs(trailingOnly = TRUE)) == 0){

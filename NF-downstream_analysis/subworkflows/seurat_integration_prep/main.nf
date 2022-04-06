@@ -61,7 +61,13 @@ workflow INTEGRATION_PREP {
 
     // Subset the input data to remove HH4
     SUBSET( TRANSFER_LABELS_OLD.out )
-    CLUSTER( SUBSET.out )
+    SUBSET.out
+        .map {row -> [row[0], row[1].findAll { it =~ ".*rds_files" }]}
+        .flatMap {it[1][0].listFiles()}
+        .map { row -> [[sample_id:row.name.replaceFirst(~/\.[^\.]+$/, '')], row] }
+        .set { ch_subset }                                                           //Channel: [[meta], rds_file]
+
+    CLUSTER( ch_subset )
 
     emit:
     cluster_out                     = CLUSTER.out

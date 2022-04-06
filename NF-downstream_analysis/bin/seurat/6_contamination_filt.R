@@ -140,6 +140,8 @@ if (opt$filter == "FALSE") {
 
 if (opt$filter == "TRUE"){
 
+  contamination_filt_data <- seurat_data
+
   contaminating_clusters <- IdentifyOutliers(seurat_obj = contamination_filt_data, metrics = names(genes), quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 
   # Plot UMAP for poor quality clusters

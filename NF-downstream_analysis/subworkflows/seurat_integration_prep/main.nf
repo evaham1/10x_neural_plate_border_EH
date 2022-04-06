@@ -7,15 +7,15 @@
 --------------------------------------------------------------------------------------*/
 
 def analysis_scripts                                = [:]
-analysis_scripts.contamination_filt = file("$baseDir/bin/seurat/6_contamination_filt.R", checkIfExists: true)
+analysis_scripts.contamination_ident = file("$baseDir/bin/seurat/6_contamination_filt.R", checkIfExists: true)
 
 
-params.contamination_filt_options   = [:]
+params.contamination_ident_options   = [:]
 
 
 // Include Seurat R processes
-include {R as CONTAMINATION_FILT} from "$baseDir/modules/local/r/main"        addParams(        options: params.contamination_filt_options,
-                                                                                                script: analysis_scripts.contamination_filt )
+include {R as CONTAMINATION_FILT} from "$baseDir/modules/local/r/main"        addParams(        options: params.contamination_ident_options,
+                                                                                                script: analysis_scripts.contamination_ident )
 
 /*-----------------------------------------------------------------------------------------------------------------------------
 Log

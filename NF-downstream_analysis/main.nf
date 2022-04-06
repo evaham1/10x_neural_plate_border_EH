@@ -145,7 +145,7 @@ workflow {
     INTEGRATION_PREP.out
         .map {row -> [row[0], row[1].findAll { it =~ ".*rds_files" }]}
         .flatMap {it[1][0].listFiles()}
-        .map { row -> [[sample_id:row.name.replaceFirst(~/\.[^\.]+$/, '')], row] }
+        .map { [[sample_id:'old_labels'], it] }
         .set { ch_old_labels }   
 
     // Collect rds files from all stages with new labels and the full data with old labels

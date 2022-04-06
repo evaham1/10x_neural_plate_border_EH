@@ -74,6 +74,7 @@ stage_order <- c("HH4", "HH5", "HH6", "HH7", "ss4", "ss8")
 
 # Retrieve seurat object label
 label <- sub('_.*', '', list.files(data_path, pattern = '*.RDS'))
+print(label)
 
 seurat_data <- readRDS(list.files(data_path, full.names = TRUE, pattern = '*.RDS'))
 # seurat_data <- readRDS('./output/NF-downstream_analysis_stacas/stage_split/HH4_splitstage_data/seurat/stage_cluster/rds_files/hh4_clustered_data.RDS')
@@ -86,12 +87,12 @@ seurat_data <- readRDS(list.files(data_path, full.names = TRUE, pattern = '*.RDS
 ########################################################################################################
 #                                      Cell state classification                                    #
 #######################################################################################
-# Convert knowledge matrix to gene list
-temp = list.files(pattern = "*.csv")
-print(temp)
-cell_state_markers <- read.csv(temp, row.names = 1) %>% select(!c(evidence))
-#cell_state_markers <- read.csv("binary_knowledge_matrix_contam.csv", row.names = 1) %>% select(!c(evidence))
 
+# Convert knowledge matrix to gene list
+BNM <- list.files(path = data_path, pattern = "*.csv")
+print(BNM)
+
+cell_state_markers <- read.csv(BNM, row.names = 1) %>% select(!c(evidence))
 cell_state_markers <- apply(cell_state_markers, 2, function(x) rownames(cell_state_markers)[x > 0])
 
 cell_states = list(

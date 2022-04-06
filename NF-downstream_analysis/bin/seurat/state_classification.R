@@ -89,7 +89,7 @@ seurat_data <- readRDS(list.files(data_path, full.names = TRUE, pattern = '*.RDS
 #######################################################################################
 
 # Convert knowledge matrix to gene list
-BNM <- list.files(path = data_path, pattern = "*.csv")
+BNM <- list.files(path = data_path, pattern = "*.csv", full.names = TRUE)
 print(BNM)
 
 cell_state_markers <- read.csv(BNM, row.names = 1) %>% select(!c(evidence))

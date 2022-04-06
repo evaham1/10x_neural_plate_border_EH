@@ -111,11 +111,11 @@ workflow {
     /*------------------------------------------------------------------------------------*/
     /* Run analysis on stage and run split
     --------------------------------------------------------------------------------------*/ 
-    // SEURAT_STAGE_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
+    SEURAT_STAGE_PROCESS( SEURAT_FILTERING.out.contamination_filt_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix )
 
-    // /*------------------------------------------------------------------------------------*/
-    // /* Transfer cell type labels from stage to full dataset
-    // --------------------------------------------------------------------------------------*/     
+    /*------------------------------------------------------------------------------------*/
+    /* Transfer cell type labels from stage to full dataset
+    --------------------------------------------------------------------------------------*/     
 
     // Collect rds files from all stages
     ch_combined = SEURAT_STAGE_PROCESS.out.state_classification_out

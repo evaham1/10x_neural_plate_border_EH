@@ -14,7 +14,7 @@ params.contamination_ident_options   = [:]
 params.transfer_labels_options   = [:]
 
 // Include Seurat R processes
-include {R as CONTAMINATION_FILT} from "$baseDir/modules/local/r/main"        addParams(        options: params.contamination_ident_options,
+include {R as CONTAMINATION_IDENT} from "$baseDir/modules/local/r/main"        addParams(        options: params.contamination_ident_options,
                                                                                                 script: analysis_scripts.contamination_ident )
 include {R as TRANSFER_LABELS_OLD} from "$baseDir/modules/local/r/main"           addParams(        options: params.transfer_labels_options,
                                                                                                 script: analysis_scripts.transfer_labels )
@@ -39,10 +39,10 @@ workflow INTEGRATION_PREP {
     main:
 
     // run contamination filt script with options to label rather than filter these cell states
-    CONTAMINATION_FILT( cell_cycle_data )
+    CONTAMINATION_IDENT( cell_cycle_data )
 
     // transfer labels process to transfer labels of transfer_labels object into 'old' column of data
-    CONTAMINATION_FILT.out
+    CONTAMINATION_IDENT.out
         .concat(transfer_labels)
         .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
         .collect()

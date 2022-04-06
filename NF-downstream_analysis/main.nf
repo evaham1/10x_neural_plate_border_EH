@@ -135,7 +135,7 @@ workflow {
     SEURAT_STAGE_PROCESS_CONTAM( SEURAT_FILTERING.out.cell_cycle_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix_contam )
     
     // Extract original scHelper cell type labels and add to data
-    INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
+    //INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
 
     // // Collect rds files from all stages with new labels and label transfer to old labelled data
     // ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out

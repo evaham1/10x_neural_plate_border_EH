@@ -27,9 +27,6 @@ opt_parser = OptionParser(option_list = option_list)
 opt <- parse_args(opt_parser)
 if(opt$verbose) print(opt)
 
-#filter = "FALSE"
-#group_by = "scHelper_cell_type"
-
 # Set paths and load data
 {
   if(length(commandArgs(trailingOnly = TRUE)) == 0){
@@ -101,7 +98,7 @@ graphics.off()
 ############################### Identify and label contaminating clusters ########################################
 # Add labels into group_by column based on identified contaminating cell states
 
-if (filter == "FALSE") {
+if (opt$filter == "FALSE") {
   
   PGC_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'PGC module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
   BI_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Blood island module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
@@ -109,7 +106,7 @@ if (filter == "FALSE") {
   Endoderm_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Endoderm module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 
   seurat_data@meta.data <- seurat_data@meta.data %>%
-    mutate(!!group_by := case_when(seurat_clusters %in% PGC_clusters ~ "Contam: PGC",
+    mutate(!!opt$group_by := case_when(seurat_clusters %in% PGC_clusters ~ "Contam: PGC",
          seurat_clusters %in% BI_clusters ~ "Contam: BI",
          seurat_clusters %in% Mesoderm_clusters ~ "Contam: Mesoderm",
          seurat_clusters %in% Endoderm_clusters ~ "Contam: Endoderm"))
@@ -118,7 +115,7 @@ if (filter == "FALSE") {
          
   ####  PLOTS ####
   png(paste0(plot_path, "IdentifiedContam_UMAP.png"), width=40, height=20, units = 'cm', res = 200)
-  DimPlot(seurat_data, group.by = group_by)
+  DimPlot(seurat_data, group.by = opt$group_by)
   graphics.off()
 
   png(paste0(plot_path, "ContaminationClustersUMAP_PGC.png"), width=40, height=20, units = 'cm', res = 200)
@@ -141,7 +138,7 @@ if (filter == "FALSE") {
 
 ############################### OR filter contaminating clusters ########################################
 
-if (filter == "TRUE"){
+if (opt$filter == "TRUE"){
 
   contaminating_clusters <- IdentifyOutliers(seurat_obj = contamination_filt_data, metrics = names(genes), quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 

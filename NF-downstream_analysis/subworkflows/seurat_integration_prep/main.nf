@@ -41,11 +41,8 @@ workflow INTEGRATION_PREP {
     // run contamination filt script with options to label rather than filter these cell states
     CONTAMINATION_FILT( cell_cycle_data )
 
+    // transfer labels process to transfer labels of transfer_labels object into 'old' column of data
     CONTAMINATION_FILT.out
-        .set{ ch_contamination_ident }
-
-    //transfer labels process to transfer labels of transfer_labels object into 'old' column of data
-    ch_contamination_ident
         .concat(transfer_labels)
         .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
         .collect()
@@ -59,6 +56,6 @@ workflow INTEGRATION_PREP {
     CLUSTER_FULL( SUBSET.out )
 
     emit:
-    integration_ready = CONTAMINATION_IDENT.out
+    integration_ready = CLUSTER_FULL.out
 }
 

@@ -18,7 +18,7 @@ library(scHelper)
 option_list <- list(
     make_option(c("-r", "--runtype"), action = "store", type = "character", help = "Specify whether running through through 'nextflow' in order to switch paths"),
     make_option(c("-c", "--cores"), action = "store", type = "integer", help = "Number of CPUs"),
-    make_option(c("-f", "--filter"), action = "store", type = "logical", help = "Boolean to determine whether to filter data or label contaminating clusters", default = 'TRUE'),
+    make_option(c("-f", "--filter"), action = "store", type = "character", help = "Boolean to determine whether to filter data or label contaminating clusters", default = 'TRUE'),
     make_option(c("-g", "--group_by"), action = "store", type = "character", help = "Column to group metadata by", default = 'scHelper_cell_type'),
     make_option(c("", "--verbose"), action = "store_true", type = "logical", help = "Verbose", default = FALSE)
     )
@@ -101,7 +101,7 @@ graphics.off()
 ############################### Identify and label contaminating clusters ########################################
 # Add labels into group_by column based on identified contaminating cell states
 
-if (filter == FALSE) {
+if (filter == "FALSE") {
   
   PGC_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'PGC module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
   BI_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Blood island module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
@@ -141,7 +141,7 @@ if (filter == FALSE) {
 
 ############################### OR filter contaminating clusters ########################################
 
-if (filter == TRUE){
+if (filter == "TRUE"){
 
   contaminating_clusters <- IdentifyOutliers(seurat_obj = contamination_filt_data, metrics = names(genes), quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 

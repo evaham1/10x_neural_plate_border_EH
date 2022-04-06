@@ -146,7 +146,7 @@ seurat_data <- FindClusters(seurat_data, resolution = cluster_res)
 # Set RNA to default assay for plotting expression data
 DefaultAssay(seurat_data) <- "RNA"
 
-cell_type_df <- lapply(cell_state_markers, function(x) t(GetAssayData(object = seurat_data, assay = 'RNA', slot = 'scale.data'))[,x] %>% rowSums(.)) %>%
+cell_type_df <- lapply(cell_state_markers, function(x) t(GetAssayData(object = seurat_data, assay = 'RNA', slot = 'scale.data'))[,x] %>% as.data.frame(.) %>% rowSums(.)) %>%
   do.call('cbind', .) %>%
   merge(., seurat_data@meta.data[,'seurat_clusters', drop=FALSE], by=0, all=TRUE)
 

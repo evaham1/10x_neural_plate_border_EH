@@ -8,7 +8,7 @@
 
 def analysis_scripts                                = [:]
 analysis_scripts.contamination_ident = file("$baseDir/bin/seurat/6_contamination_filt.R", checkIfExists: true)
-analysis_scripts.transfer_labels                    = file("$baseDir/bin/seurat/transfer_labels.R", checkIfExists: true)
+analysis_scripts.transfer_labels = file("$baseDir/bin/seurat/transfer_labels.R", checkIfExists: true)
 
 params.contamination_ident_options   = [:]
 params.transfer_labels_options   = [:]
@@ -49,13 +49,13 @@ workflow INTEGRATION_PREP {
         .map { [[sample_id:'tranfer_labels'], it] } // [[meta], [rds1, rds2, rds3, ...]]
         .set{ ch_combined }
 
-    TRANSFER_LABELS_OLD( ch_combined )
+    // TRANSFER_LABELS_OLD( ch_combined )
 
-    // Subset the input data to remove HH4
-    SUBSET( TRANSFER_LABELS_OLD.out )
-    CLUSTER_FULL( SUBSET.out )
+    // // Subset the input data to remove HH4
+    // SUBSET( TRANSFER_LABELS_OLD.out )
+    // CLUSTER_FULL( SUBSET.out )
 
-    emit:
-    integration_ready = CLUSTER_FULL.out
+    // emit:
+    // integration_ready = ch_combined
 }
 

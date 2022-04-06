@@ -42,19 +42,19 @@ workflow INTEGRATION_PREP {
     CONTAMINATION_IDENT( cell_cycle_data )
 
     //transfer labels process to transfer labels of transfer_labels object into 'old' column of data
-    ch_combined = CONTAMINATION_IDENT.out
-        .concat(transfer_labels)
-        .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
-        .collect()
-        .map { [[sample_id:'tranfer_labels'], it] } // [[meta], [rds1, rds2, rds3, ...]]
+    // ch_combined = CONTAMINATION_IDENT.out
+    //     .concat(transfer_labels)
+    //     .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
+    //     .collect()
+    //     .map { [[sample_id:'tranfer_labels'], it] } // [[meta], [rds1, rds2, rds3, ...]]
 
-    TRANSFER_LABELS_OLD( ch_combined )
+    // TRANSFER_LABELS_OLD( ch_combined )
 
-    // Subset the input data to remove HH4
-    SUBSET( TRANSFER_LABELS_OLD.out )
-    CLUSTER_FULL( SUBSET.out )
+    // // Subset the input data to remove HH4
+    // SUBSET( TRANSFER_LABELS_OLD.out )
+    // CLUSTER_FULL( SUBSET.out )
 
     emit:
-    integration_ready = CLUSTER_FULL.out
+    integration_ready = CONTAMINATION_IDENT.out
 }
 

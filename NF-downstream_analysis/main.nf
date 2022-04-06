@@ -142,13 +142,18 @@ workflow {
     
     // Extract original scHelper cell type labels and add to data - in scHelper_cell_type slot
     INTEGRATION_PREP( SEURAT_FILTERING.out.cell_cycle_out, TRANSFER_LABELS.out )
+    INTEGRATION_PREP.out
+        .map {row -> [row[0], row[1].findAll { it =~ ".*rds_files" }]}
+        .flatMap {it[1][0].listFiles()}
+        .map { row -> [[sample_id:row.name.replaceFirst(~/\.[^\.]+$/, '')], row] }
+        .set { ch_old_labels }   
 
     // Collect rds files from all stages with new labels and the full data with old labels
     ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out.state_classification_out
         .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
         .collect()
         .map { [[sample_id:'all_stages'], it] } // [[meta], [rds1, rds2, rds3, ...]]
-        .combine( INTEGRATION_PREP.out.cluster_out ) //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5], [sample_id:NF-scRNA-input], [rds_files, plots]]
+        .combine( ch_old_labels ) //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5], [sample_id:NF-scRNA-input], [rds_files, plots]]
         .map{[it[0], it[1] + it[3]]} //[[sample_id:all_stages], [HH7, ss8, HH6, ss4, HH4, HH5, rds_files, plots]
         //.view() //[[sample_id:all_stages], [HH6, HH4, ss8, ss4, HH7, HH5, cell_cycle_data.RDS]]
 

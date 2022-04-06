@@ -10,8 +10,8 @@ library(scHelper)
 option_list <- list(
     make_option(c("-r", "--runtype"), action = "store", type = "character", help = "Specify whether running through through 'nextflow' in order to switch paths"),
     make_option(c("-c", "--cores"), action = "store", type = "integer", help = "Number of CPUs"),
-    make_option(c("-gs", "--group_by_source"), action = "store", type = "character", help = "Column to group metadata by in source data", default = 'scHelper_cell_type'),
-    make_option(c("-gd", "--group_by_destination"), action = "store", type = "character", help = "Column to group metadata by in destination data", default = 'scHelper_cell_type'),
+    make_option(c("-s", "--group_by_source"), action = "store", type = "character", help = "Column to group metadata by in source data", default = 'scHelper_cell_type'),
+    make_option(c("-g", "--group_by_destination"), action = "store", type = "character", help = "Column to group metadata by in destination data", default = 'scHelper_cell_type'),
     make_option(c("-d", "--destination_data"), action = "store", type = "character", help = "Name of full dataset to transfer labels to", default = 'contamination_filt_data.RDS'),
     make_option(c("", "--verbose"), action = "store_true", type = "logical", help = "Verbose", default = FALSE)
     )

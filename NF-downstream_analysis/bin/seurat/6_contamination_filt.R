@@ -18,7 +18,7 @@ library(scHelper)
 option_list <- list(
     make_option(c("-r", "--runtype"), action = "store", type = "character", help = "Specify whether running through through 'nextflow' in order to switch paths"),
     make_option(c("-c", "--cores"), action = "store", type = "integer", help = "Number of CPUs"),
-    make_option(c("-f", "--filter"), action = "store", type = "character", help = "Boolean to determine whether to filter data or label contaminating clusters", default = 'TRUE'),
+    make_option(c("-f", "--filter"), action = "store", type = "logical", help = "Boolean to determine whether to filter data or label contaminating clusters", default = 'TRUE'),
     make_option(c("-g", "--group_by"), action = "store", type = "character", help = "Column to group metadata by", default = 'scHelper_cell_type'),
     make_option(c("", "--verbose"), action = "store_true", type = "logical", help = "Verbose", default = FALSE)
     )

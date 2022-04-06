@@ -144,7 +144,7 @@ workflow {
     INTEGRATION_PREP( SEURAT_FILTERING.out.cell_cycle_out, TRANSFER_LABELS.out )
 
     // Collect rds files from all stages with new labels and the full data with old labels
-    ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out.STATE_CLASSIFICATION.out
+    ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out.state_classification_out
         .map{it[1].findAll{it =~ /rds_files/}[0].listFiles()[0]}
         .collect()
         .map { [[sample_id:'all_stages'], it] } // [[meta], [rds1, rds2, rds3, ...]]

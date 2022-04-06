@@ -61,9 +61,9 @@ workflow INTEGRATION_PREP {
 
     // Subset the input data to remove HH4
     SUBSET( TRANSFER_LABELS_OLD.out )
-    CLUSTER_FULL( SUBSET.out )
+    //CLUSTER_FULL( SUBSET.out )
 
     emit:
-    integration_ready = CLUSTER_FULL.out
+    integration_ready = SUBSET.out
 }
 

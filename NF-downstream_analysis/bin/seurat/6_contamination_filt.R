@@ -2,6 +2,7 @@
 
 # Load packages
 library(getopt)
+library(optparse)
 library(Seurat)
 library(future)
 library(cowplot)

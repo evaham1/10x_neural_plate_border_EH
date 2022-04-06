@@ -69,7 +69,8 @@ include {SEURAT_SPLIT_PROCESS as SEURAT_STAGE_PROCESS_CONTAM} from "$baseDir/sub
                                                                                                                                                     scvelo_run_options:                     modules['stage_scvelo_run'])
 
 // Subworkflow to transfer labels for integration with scATAC
-include {INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/main"                           addParams(  contamination_ident_options:             modules['contamination_ident'])
+include {INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/main"                           addParams(  contamination_ident_options:             modules['contamination_ident'],
+                                                                                                                           transfer_labels_options:                 modules['transfer_labels_for_integration'])
 
 
 

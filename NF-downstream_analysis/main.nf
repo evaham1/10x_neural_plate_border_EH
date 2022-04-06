@@ -69,7 +69,7 @@ include {SEURAT_SPLIT_PROCESS as SEURAT_STAGE_PROCESS_CONTAM} from "$baseDir/sub
                                                                                                                                                     scvelo_run_options:                     modules['stage_scvelo_run'])
 
 // Subworkflow to transfer labels for integration with scATAC
-include {INTEGRATION_PREP as INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/main"                           addParams(  contamination_ident_options:             modules['contamination_ident'])
+include {INTEGRATION_PREP} from "$baseDir/subworkflows/seurat_integration_prep/main"                           addParams(  contamination_ident_options:             modules['contamination_ident'])
 
 
 
@@ -135,7 +135,7 @@ workflow {
     SEURAT_STAGE_PROCESS_CONTAM( SEURAT_FILTERING.out.cell_cycle_out, MERGE_LOOM.out.loom.map{it[1]}, SEURAT_FILTERING.out.annotations.map{it[1]}, ch_binary_knowledge_matrix_contam )
     
     // Extract original scHelper cell type labels and add to data
-    //INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
+    INTEGRATION_PREP( SEURAT_FILTERING.out.CELL_CYCLE.out, TRANSFER_LABELS.out )
 
     // // Collect rds files from all stages with new labels and label transfer to old labelled data
     // ch_labels = SEURAT_STAGE_PROCESS_CONTAM.out

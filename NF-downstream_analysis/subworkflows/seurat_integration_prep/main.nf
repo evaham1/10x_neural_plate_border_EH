@@ -63,7 +63,7 @@ workflow INTEGRATION_PREP {
     SUBSET( TRANSFER_LABELS_OLD.out )
     //CLUSTER_FULL( SUBSET.out )
 
-    emit:
-    integration_ready = SUBSET.out
+    // emit:
+    // integration_ready = SUBSET.out
 }
 

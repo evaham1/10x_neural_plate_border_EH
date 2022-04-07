@@ -106,10 +106,10 @@ if (opt$filter == "FALSE") {
   Endoderm_clusters <- IdentifyOutliers(seurat_obj = seurat_data, metrics = 'Endoderm module', quantiles = c(0.1, 0.90), intersect_metrics = FALSE)
 
   seurat_data@meta.data <- seurat_data@meta.data %>%
-    mutate(!!opt$group_by := case_when(seurat_clusters %in% PGC_clusters ~ "Contam: PGC",
-         seurat_clusters %in% BI_clusters ~ "Contam: BI",
-         seurat_clusters %in% Mesoderm_clusters ~ "Contam: Mesoderm",
-         seurat_clusters %in% Endoderm_clusters ~ "Contam: Endoderm"))
+    mutate(!!opt$group_by := case_when(seurat_clusters %in% PGC_clusters ~ "PGC",
+         seurat_clusters %in% BI_clusters ~ "BI",
+         seurat_clusters %in% Mesoderm_clusters ~ "meso",
+         seurat_clusters %in% Endoderm_clusters ~ "endo"))
   
   saveRDS(seurat_data, paste0(rds_path, "contamination_identified.RDS"), compress = FALSE)
          

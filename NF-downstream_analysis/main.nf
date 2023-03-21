@@ -107,18 +107,6 @@ workflow {
         .set {ch_scRNAseq_counts}
 
     SEURAT_FILTERING( ch_scRNAseq_counts )
-        
-    /*------------------------------------------------------------------------------------*/
-    /* Prepare inputs for scVelo
-    --------------------------------------------------------------------------------------*/
-   
-    // Set channel for input looms
-    METADATA.out
-        .filter{ it[0].sample_id == 'NF-scRNAseq_alignment_out' }
-        .map {[it[0], it[1].collect{ file(it+"/velocyto", checkIfExists: true) }]}
-        .set {ch_loomInput}
-
-    MERGE_LOOM( ch_loomInput )
 
     /*------------------------------------------------------------------------------------*/
     /* Run analysis on stage and run split
